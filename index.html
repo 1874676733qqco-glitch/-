@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>濃度計算サイト</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-copy">
+        <p class="eyebrow">学習用ラボツール</p>
+        <h1>濃度計算サイト</h1>
+        <p class="lead">
+          モル濃度、希釈、%濃度、単位換算、混合、連続希釈を日本語で確認できます。
+        </p>
+      </div>
+      <div class="header-tools" aria-label="表示と結果操作">
+        <label class="compact-field" for="precision">
+          小数桁
+          <select id="precision">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </label>
+        <button class="button secondary" id="copy-result" type="button" disabled>
+          結果をコピー
+        </button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <nav class="tab-list" aria-label="計算タイプ">
+        <button class="tab-button active" type="button" data-tab="molar">
+          モル濃度調製
+        </button>
+        <button class="tab-button" type="button" data-tab="dilution">
+          C1V1希釈
+        </button>
+        <button class="tab-button" type="button" data-tab="percent">
+          質量％濃度
+        </button>
+        <button class="tab-button" type="button" data-tab="conversion">
+          単位換算
+        </button>
+        <button class="tab-button" type="button" data-tab="mixing">
+          混合計算
+        </button>
+        <button class="tab-button" type="button" data-tab="serial">
+          連続希釈
+        </button>
+      </nav>
+
+      <div class="workspace">
+        <section class="calculator-panel active" id="panel-molar" data-panel="molar">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">作りたい濃度から量を出す</p>
+              <h2>モル濃度調製</h2>
+            </div>
+            <p class="formula">必要質量 = 濃度 × 体積 × 分子量 ÷ 純度</p>
+          </div>
+          <div class="panel-layout">
+            <form class="input-panel" data-calculator="molar">
+              <label class="field">
+                試薬
+                <input
+                  id="molar-reagent"
+                  list="molar-reagent-options"
+                  data-reagent-target="molar-mw"
+                  type="text"
+                  placeholder="例: NaCl / 自由入力"
+                  autocomplete="off"
+                />
+                <datalist id="molar-reagent-options"></datalist>
+              </label>
+              <label class="field">
+                目標濃度
+                <span class="input-row">
+                  <input id="molar-concentration" type="number" step="any" value="1" />
+                  <select id="molar-concentration-unit">
+                    <option>M</option>
+                    <option>mM</option>
+                    <option>uM</option>
+                    <option>nM</option>
+                  </select>
+                </span>
+              </label>
+              <label class="field">
+                最終体積
+                <span class="input-row">
+                  <input id="molar-volume" type="number" step="any" value="1" />
+                  <select id="molar-volume-unit">
+                    <option>L</option>
+                    <option>mL</option>
+                    <option>uL</option>
+                  </select>
+                </span>
+              </label>
+              <label class="field">
+                分子量
+                <input id="molar-mw" type="number" step="any" value="58.44" />
+              </label>
+              <label class="field">
+                純度%
+                <input id="molar-purity" type="number" step="any" value="100" />
+              </label>
+              <button class="button primary" type="submit">計算する</button>
+            </form>
+            <div class="result-panel" id="result-molar" aria-live="polite"></div>
+          </div>
+          <div class="learning-note">
+            <strong>例:</strong> 1 M NaClを1 L作る場合、58.44 gを量り取り、溶媒で最終体積を1 Lにします。
+          </div>
+        </section>
+
+        <section class="calculator-panel" id="panel-dilution" data-panel="dilution">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">原液を薄める</p>
+              <h2>C1V1希釈</h2>
+            </div>
+            <p class="formula">
+              V1 = C2 × V2 ÷ C1<br />
+              <span>C1: 原液濃度 / V1: 必要な原液量 / C2: 目標濃度 / V2: 最終体積</span>
+            </p>
+          </div>
+          <div class="panel-layout">
+            <form class="input-panel" data-calculator="dilution">
+              <label class="field">
+                原液濃度
+                <span class="input-row">
+                  <input id="dilution-stock" type="number" step="any" value="1" />
+                  <select id="dilution-stock-unit" data-concentration-units></select>
+                </span>
+              </label>
+              <label class="field">
+                目標濃度
+                <span class="input-row">
+                  <input id="dilution-target" type="number" step="any" value="100" />
+                  <select id="dilution-target-unit" data-concentration-units></select>
+                </span>
+              </label>
+              <label class="field">
+                最終体積
+                <span class="input-row">
+                  <input id="dilution-volume" type="number" step="any" value="50" />
+                  <select id="dilution-volume-unit">
+                    <option>mL</option>
+                    <option>L</option>
+                    <option>uL</option>
+                  </select>
+                </span>
+              </label>
+              <label class="field">
+                分子量
+                <input id="dilution-mw" type="number" step="any" value="58.44" />
+              </label>
+              <button class="button primary" type="submit">計算する</button>
+            </form>
+            <div class="result-panel" id="result-dilution" aria-live="polite"></div>
+          </div>
+          <div class="learning-note">
+            <strong>注意:</strong> 目標濃度は原液濃度より低い必要があります。質量濃度単位を混ぜる場合は分子量を使います。
+          </div>
+        </section>
+
+        <section class="calculator-panel" id="panel-percent" data-panel="percent">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">%表記から調製量を出す</p>
+              <h2>質量％濃度</h2>
+            </div>
+            <p class="formula">w/v% = g / 100 mL、v/v% = mL / 100 mL、wt% = g / 100 g</p>
+          </div>
+          <div class="panel-layout">
+            <form class="input-panel" data-calculator="percent">
+              <label class="field">
+                種類
+                <select id="percent-mode">
+                  <option value="wv">w/v%</option>
+                  <option value="vv">v/v%</option>
+                  <option value="wt">wt%</option>
+                </select>
+              </label>
+              <label class="field">
+                %濃度
+                <input id="percent-value" type="number" step="any" value="5" />
+              </label>
+              <label class="field">
+                <span id="percent-amount-label">最終体積</span>
+                <span class="input-row">
+                  <input id="percent-amount" type="number" step="any" value="100" />
+                  <select id="percent-amount-unit">
+                    <option>mL</option>
+                    <option>L</option>
+                    <option>uL</option>
+                  </select>
+                </span>
+                <span class="field-help" id="percent-amount-help">
+                  w/v%とv/v%では体積、wt%では質量を入力します。
+                </span>
+              </label>
+              <button class="button primary" type="submit">計算する</button>
+            </form>
+            <div class="result-panel" id="result-percent" aria-live="polite"></div>
+          </div>
+          <div class="learning-note">
+            <strong>例:</strong> 5% w/vを100 mL作る場合は溶質5 g、5 wt%を100 g作る場合は溶質5 gと溶媒95 gです。
+          </div>
+        </section>
+
+        <section class="calculator-panel" id="panel-conversion" data-panel="conversion">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">濃度単位をそろえる</p>
+              <h2>単位換算</h2>
+            </div>
+            <p class="formula">mol/L と g/L を分子量で橋渡しします</p>
+          </div>
+          <div class="panel-layout">
+            <form class="input-panel" data-calculator="conversion">
+              <label class="field">
+                値
+                <input id="conversion-value" type="number" step="any" value="1" />
+              </label>
+              <label class="field">
+                変換元
+                <select id="conversion-from" data-concentration-units></select>
+              </label>
+              <label class="field">
+                変換先
+                <select id="conversion-to" data-concentration-units></select>
+              </label>
+              <label class="field">
+                分子量
+                <input id="conversion-mw" type="number" step="any" value="58.44" />
+              </label>
+              <button class="button primary" type="submit">計算する</button>
+            </form>
+            <div class="result-panel" id="result-conversion" aria-live="polite"></div>
+          </div>
+          <div class="learning-note">
+            <strong>注意:</strong> ppmは希薄な水溶液の近似として mg/L と同じ扱いにしています。
+          </div>
+        </section>
+
+        <section class="calculator-panel" id="panel-mixing" data-panel="mixing">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">同じ単位の溶液を合わせる</p>
+              <h2>混合計算</h2>
+            </div>
+            <p class="formula">Cmix = Σ(Ci × Vi) ÷ ΣVi</p>
+          </div>
+          <div class="panel-layout">
+            <form class="input-panel wide" data-calculator="mixing">
+              <label class="field">
+                濃度単位
+                <select id="mixing-unit" data-concentration-units></select>
+              </label>
+              <div class="solution-table" id="mixing-solutions"></div>
+              <div class="button-row">
+                <button class="button secondary" id="add-solution" type="button">
+                  行を追加
+                </button>
+                <button class="button primary" type="submit">計算する</button>
+              </div>
+            </form>
+            <div class="result-panel" id="result-mixing" aria-live="polite"></div>
+          </div>
+          <div class="learning-note">
+            <strong>注意:</strong> 混合計算は同じ単位同士で加重平均します。反応や体積収縮は考慮しません。
+          </div>
+        </section>
+
+        <section class="calculator-panel" id="panel-serial" data-panel="serial">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">段階ごとの濃度を見る</p>
+              <h2>連続希釈</h2>
+            </div>
+            <p class="formula">Cn = C0 ÷ 希釈倍率^n</p>
+          </div>
+          <div class="panel-layout">
+            <form class="input-panel" data-calculator="serial">
+              <label class="field">
+                初期濃度
+                <span class="input-row">
+                  <input id="serial-initial" type="number" step="any" value="1" />
+                  <select id="serial-unit" data-concentration-units></select>
+                </span>
+              </label>
+              <label class="field">
+                希釈倍率
+                <input id="serial-factor" type="number" step="any" value="10" />
+              </label>
+              <label class="field">
+                段数
+                <input id="serial-steps" type="number" step="1" value="4" />
+              </label>
+              <button class="button primary" type="submit">計算する</button>
+            </form>
+            <div class="result-panel" id="result-serial" aria-live="polite"></div>
+          </div>
+          <div class="learning-note">
+            <strong>例:</strong> 1 mMを10倍ずつ4段階薄めると、100 uM、10 uM、1 uM、0.1 uMになります。
+          </div>
+        </section>
+
+        <section class="history-panel" aria-labelledby="history-title">
+          <div class="history-heading">
+            <h2 id="history-title">計算履歴</h2>
+            <button class="button secondary" id="clear-history" type="button">
+              履歴を消去
+            </button>
+          </div>
+          <p class="history-privacy">
+            履歴はこのブラウザ内だけに保存されます。他の人のパソコンやサーバーには送信されません。
+          </p>
+          <ol class="history-list" id="history-list"></ol>
+        </section>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      教育・研究補助用の計算ツールです。臨床、医療、危険物調製の正式手順としては使用しないでください。
+    </footer>
+
+    <script src="./js/calculations.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>
